@@ -68,4 +68,59 @@ button:hover{
 </head>
 <body>
 
-<h1>スマホゲーム風 ガチャ<
+<h1>スマホゲーム風 ガチャ</h1>
+
+<div class="container">
+  <button onclick="gacha()">ガチャを引く</button>
+  
+  <div id="result" class="result"></div>
+  <div id="card"></div>
+
+  <div class="prob">
+    UR:1% / SSR:9% / SR:30% / R:60%
+  </div>
+</div>
+
+<script>
+function gacha(){
+
+  const rand = Math.random()*100;
+
+  let rarity;
+  let character;
+
+  if(rand < 1){
+    rarity = "UR";
+    character = randomChoice(["伝説の勇者","銀河ドラゴン","神の魔導士"]);
+  }
+  else if(rand < 10){
+    rarity = "SSR";
+    character = randomChoice(["炎の剣士","氷の魔女","雷の忍者"]);
+  }
+  else if(rand < 40){
+    rarity = "SR";
+    character = randomChoice(["弓使い","騎士","格闘家"]);
+  }
+  else{
+    rarity = "R";
+    character = randomChoice(["村人","新人兵士","見習い魔法使い"]);
+  }
+
+  const result = document.getElementById("result");
+  const card = document.getElementById("card");
+
+  result.innerText = rarity + " を獲得！";
+
+  card.innerHTML = `<div class="card ${rarity.toLowerCase()}">
+  <div>${rarity}</div>
+  <div style="margin-top:10px">${character}</div>
+  </div>`;
+}
+
+function randomChoice(arr){
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+</script>
+
+</body>
+</html>
