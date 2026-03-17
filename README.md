@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>シンプルソリティア</title>
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#0b6623;
+  color:white;
+  text-align:center;
+}
+
+h1{
+  margin:20px;
+}
+
+#game{
+  width:1000px;
+  max-width:95%;
+  margin:auto;
+}
+
+.row{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  margin:15px 0;
+}
+
+.pile{
+  width:80px;
+  height:110px;
+  border:2px dashed rgba(255,255,255,0.4);
+  border-radius:8px;
+  position:relative;
+}
+
+.card{
+  width:80px;
+  height:110px;
+  background:white;
+  color:black;
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  position:absolute;
+  cursor:pointer;
+  user-select:none;
+}
+
+.red{color:#d22}
+
+#stock{
+  background:#1e8449;
+  border:2px solid white;
+}
+
+#message{
+  margin-top:10px;
+  font-size:18px;
+}
+
+button{
+  margin-top:15px;
+  padding:10px 20px;
+  font-size:16px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<h1>ソリティア（簡易版）</h1>
+
+<div id="game">
+
+<div class="row">
+<div id="stock" class="pile"></div>
+<div id="waste" class="pile"></div>
+<div id="f1" class="pile"></div>
+<div id="f2" class="pile"></div>
+<div id="f3" class="pile"></div>
+<div id="f4" class="pile"></div>
+</div>
+
+<div class="row" id="tableau"></div>
+
+</div>
+
+<button onclick="initGame()">リスタート</button>
+
+<div id="message"></div>
+
+<script>
+
+const suits = ['♠','♥','♦','♣'];
+const values = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+let deck = [];
+let stock = [];
+let waste = [];
+let tableau = [];
+let selected = null;
+
+function createDeck(){
+  deck = [];
+  for(let s of suits){
+    for(let v of values){
+      deck.push({suit:s,value:v});
+    }
+  }
+}
+
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+function initGame(){
+  createDeck();
+  shuffle(deck);
+
+  stock = [...deck];
+  waste = [];
+  tableau = [];
+
+  const tab = document.getElementById("tableau");
+  tab.innerHTML = "";
+
+  for(let i=0;i<7;i++){
+    const pile = document.createElement("div");
+    pile.className="pile";
+    pile.dataset.index=i;
+    pile.onclick=()=>placeCard(i);
+    tab.appendChild(pile);
+    tableau.push([]);
+  }
+
+  render();
+}
+
+function drawCard(){
+  if(stock.length===0){
+    stock = waste.reverse();
+    waste = [];
+  }
+  if(stock.length>0){
+    waste.push(stock.pop());
+  }
+  render();
+}
+
+function selectWaste(){
+  if(waste.length===0)return;
+  selected = waste[waste.length-1];
+  document.getElementById("message").innerText = "カードを置く列をクリック";
+}
+
+function placeCard(i){
+  if(!selected)return;
+
+  tableau[i].push(selected);
+  waste.pop();
+  selected=null;
+
+  render();
+  checkWin();
+}
+
+function render(){
+
+  const stockDiv = document.getElementById("stock");
+  stockDiv.onclick = drawCard;
+  stockDiv.innerHTML = stock.length ? "🂠" : "";
+
+  const wasteDiv = document.getElementById("waste");
+  wasteDiv.innerHTML="";
+
+  if(waste.length){
+    const c=createCard(waste[waste.length-1]);
+    c.onclick=selectWaste;
+    wasteDiv.appendChild(c);
+  }
+
+  const tab=document.getElementById("tableau").children;
+
+  for(let i=0;i<7;i++){
+    tab[i].innerHTML="";
+
+    tableau[i].forEach((card,index)=>{
+      const c=createCard(card);
+      c.style.top=(index*25)+"px";
+      tab[i].appendChild(c);
+    })
+  }
+}
+
+function createCard(card){
+  const div=document.createElement("div");
+  div.className="card";
+
+  if(card.suit==='♥'||card.suit==='♦')div.classList.add("red");
+
+  div.innerText=card.value+card.suit;
+  return div;
+}
+
+function checkWin(){
+  let total=0;
+  for(let pile of tableau) total+=pile.length;
+
+  if(total===52){
+    document.getElementById("message").innerText="クリア！おめでとう！";
+  }
+}
+
+initGame();
+
+</script>
+
+</body>
+</html>
