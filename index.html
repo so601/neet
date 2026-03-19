@@ -2,97 +2,177 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>早押しクイズゲーム</title>
+<title>オセロゲーム</title>
 <style>
     body {
-        font-family: sans-serif;
         text-align: center;
-        background: #f0f0f0;
+        font-family: sans-serif;
+        background: #2e7d32;
+        color: white;
     }
-    .container {
-        margin-top: 50px;
-        padding: 20px;
-        background: white;
-        border-radius: 10px;
-        display: inline-block;
-        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    h1 {
+        margin-top: 10px;
     }
-    button {
-        padding: 10px 20px;
-        font-size: 18px;
-        margin: 10px;
+    #board {
+        display: grid;
+        grid-template-columns: repeat(8, 60px);
+        grid-template-rows: repeat(8, 60px);
+        gap: 2px;
+        justify-content: center;
+        margin: 20px auto;
+    }
+    .cell {
+        width: 60px;
+        height: 60px;
+        background: #388e3c;
+        position: relative;
         cursor: pointer;
     }
-    #question {
-        font-size: 20px;
-        margin: 20px 0;
+    .disc {
+        width: 80%;
+        height: 80%;
+        border-radius: 50%;
+        position: absolute;
+        top: 10%;
+        left: 10%;
     }
-    #result {
-        font-weight: bold;
-        margin-top: 20px;
+    .black {
+        background: black;
+    }
+    .white {
+        background: white;
+    }
+    #info {
+        margin-top: 10px;
+        font-size: 18px;
+    }
+    button {
+        margin-top: 10px;
+        padding: 8px 16px;
+        font-size: 16px;
     }
 </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>早押しクイズゲーム</h1>
-    <div id="question">スタートボタンを押してね</div>
-    <button onclick="startGame()">スタート</button>
-    <button onclick="buzz()">早押し！</button>
-    <div id="result"></div>
-    <div id="score">スコア: 0</div>
-</div>
+<h1>オセロゲーム</h1>
+<div id="board"></div>
+<div id="info"></div>
+<button onclick="resetGame()">リセット</button>
 
 <script>
-const quiz = [
-    { q: "日本の首都は？", a: "東京" },
-    { q: "1+1は？", a: "2" },
-    { q: "富士山の高さ（約）は？", a: "3776" },
-    { q: "りんごの色は？", a: "赤" }
+const boardSize = 8;
+let board = [];
+let currentPlayer = "black";
+
+const directions = [
+    [1,0], [-1,0], [0,1], [0,-1],
+    [1,1], [1,-1], [-1,1], [-1,-1]
 ];
 
-let current = 0;
-let score = 0;
-let answering = false;
+function initBoard() {
+    board = Array(boardSize).fill().map(() => Array(boardSize).fill(null));
 
-function startGame() {
-    current = 0;
-    score = 0;
-    document.getElementById("score").textContent = "スコア: 0";
-    nextQuestion();
+    // 初期配置
+    board[3][3] = "white";
+    board[4][4] = "white";
+    board[3][4] = "black";
+    board[4][3] = "black";
 }
 
-function nextQuestion() {
-    if (current >= quiz.length) {
-        document.getElementById("question").textContent = "終了！";
-        document.getElementById("result").textContent = "最終スコア: " + score;
-        return;
-    }
-    document.getElementById("question").textContent = quiz[current].q;
-    document.getElementById("result").textContent = "";
-    answering = true;
-}
+function createBoard() {
+    const boardDiv = document.getElementById("board");
+    boardDiv.innerHTML = "";
 
-function buzz() {
-    if (!answering) return;
+    for (let y = 0; y < boardSize; y++) {
+        for (let x = 0; x < boardSize; x++) {
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.onclick = () => placeDisc(x, y);
 
-    let userAnswer = prompt("答えを入力！");
-    if (userAnswer === null) return;
+            if (board[y][x]) {
+                const disc = document.createElement("div");
+                disc.className = "disc " + board[y][x];
+                cell.appendChild(disc);
+            }
 
-    if (userAnswer === quiz[current].a) {
-        document.getElementById("result").textContent = "正解！";
-        score++;
-    } else {
-        document.getElementById("result").textContent = "不正解！正解は " + quiz[current].a;
+            boardDiv.appendChild(cell);
+        }
     }
 
-    document.getElementById("score").textContent = "スコア: " + score;
-    answering = false;
-    current++;
-
-    setTimeout(nextQuestion, 1000);
+    updateInfo();
 }
+
+function placeDisc(x, y) {
+    if (board[y][x] !== null) return;
+
+    let flipped = flipDiscs(x, y, currentPlayer);
+    if (flipped.length === 0) return;
+
+    board[y][x] = currentPlayer;
+
+    currentPlayer = currentPlayer === "black" ? "white" : "black";
+    createBoard();
+}
+
+function flipDiscs(x, y, player) {
+    let totalFlipped = [];
+
+    for (let [dx, dy] of directions) {
+        let nx = x + dx;
+        let ny = y + dy;
+        let temp = [];
+
+        while (
+            nx >= 0 && nx < boardSize &&
+            ny >= 0 && ny < boardSize &&
+            board[ny][nx] &&
+            board[ny][nx] !== player
+        ) {
+            temp.push([nx, ny]);
+            nx += dx;
+            ny += dy;
+        }
+
+        if (
+            nx >= 0 && nx < boardSize &&
+            ny >= 0 && ny < boardSize &&
+            board[ny][nx] === player
+        ) {
+            for (let [fx, fy] of temp) {
+                board[fy][fx] = player;
+            }
+            totalFlipped = totalFlipped.concat(temp);
+        }
+    }
+
+    return totalFlipped;
+}
+
+function updateInfo() {
+    let black = 0;
+    let white = 0;
+
+    for (let row of board) {
+        for (let cell of row) {
+            if (cell === "black") black++;
+            if (cell === "white") white++;
+        }
+    }
+
+    document.getElementById("info").textContent =
+        `黒: ${black}　白: ${white}　現在のターン: ${currentPlayer === "black" ? "黒" : "白"}`;
+}
+
+function resetGame() {
+    initBoard();
+    currentPlayer = "black";
+    createBoard();
+}
+
+// 初期化
+initBoard();
+createBoard();
 </script>
 
 </body>
